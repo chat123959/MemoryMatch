@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Memory Match Game</title>
+    <style>
+        :root {
+            --primary: #4a6fa5;
+            --secondary: #166088;
+            --accent: #4fc3f7;
+            --background: #f0f8ff;
+            --card-back: #166088;
+            --text: #333;
+            --white: #fff;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            background-color: var(--background);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px;
+            overflow-x: hidden;
+        }
+        
+        h1 {
+            color: var(--secondary);
+            margin-bottom: 8px;
+            text-align: center;
+            font-size: clamp(1.5rem, 5vw, 2rem);
+        }
+        
+        .subtitle {
+            color: var(--primary);
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: clamp(0.9rem, 3vw, 1.1rem);
+        }
+        
+        .menu {
+            background-color: var(--white);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 500px;
+        }
+        
+        .difficulty-options {
+            display: flex;
+            justify-content: space-between;
+            margin: 15px 0;
+            gap: 8px;
+        }
+        
+        .difficulty-btn {
+            background-color: var(--white);
+            border: 2px solid var(--primary);
+            color: var(--primary);
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex: 1;
+            font-size: clamp(0.7rem, 3vw, 0.9rem);
+            white-space: nowrap;
+        }
+        
+        .difficulty-btn:hover, .difficulty-btn.active {
+            background-color: var(--primary);
+            color: var(--white);
+        }
+        
+        .start-btn {
+            background-color: var(--secondary);
+            color: var(--white);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: clamp(0.8rem, 3.5vw, 1rem);
+            font-weight: bold;
+            margin-top: 15px;
+            width: 100%;
+            transition: background-color 0.2s;
+        }
+        
+        .start-btn:hover {
+            background-color: var(--primary);
+        }
+        
+        .game-container {
+            display: none;
+            width: 100%;
+            max-width: 800px;
+            margin-top: 15px;
+        }
+        
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .stats {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .stat-box {
+            background-color: var(--white);
+            padding: 8px 12px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            font-size: clamp(0.7rem, 3vw, 0.9rem);
+            min-width: 80px;
+        }
+        
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            perspective: 1000px;
+            width: 100%;
+        }
+        
+        .card {
+            aspect-ratio: 1/1;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.4s ease;
+            cursor: pointer;
+            width: 100%;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 6px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card-front {
+            background-color: var(--white);
+            transform: rotateY(180deg);
+            font-size: clamp(1.5rem, 6vw, 2rem);
+        }
+        
+        .card-back {
+            background-color: var(--card-back);
+            color: var(--white);
+            font-size: clamp(1.2rem, 5vw, 1.8rem);
+        }
+        
+        .card.flipped {
+            transform: rotateY(180deg);
+        }
+        
+        .how-to-play {
+            background-color: var(--white);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+            width: 100%;
+            max-width: 500px;
+        }
+        
+        .how-to-play h2 {
+            color: var(--secondary);
+            margin-bottom: 10px;
+            font-size: clamp(1.1rem, 4vw, 1.3rem);
+        }
+        
+        .how-to-play ul {
+            list-style-position: inside;
+            padding-left: 5px;
+            font-size: clamp(0.8rem, 3vw, 0.9rem);
+        }
+        
+        .how-to-play li {
+            margin-bottom: 6px;
+        }
+        
+        /* Ad Containers - Optimized */
+        .ad-container {
+            width: 100%;
+            margin: 10px 0;
+            text-align: center;
+            background-color: #f1f1f1;
+            padding: 8px;
+            border-radius: 5px;
+            min-height: 50px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        #banner-ad {
+            height: 50px;
+        }
+        
+        #reward-ad-container {
+            margin-top: 15px;
+        }
+        
+        .reward-btn {
+            background-color: #FFC107;
+            color: #000;
+        }
+        
+        #reward-status {
+            margin-top: 8px;
+            font-size: clamp(0.7rem, 3vw, 0.8rem);
+            color: #555;
+        }
+        
+        /* Mobile-first optimizations */
+        @media (max-width: 600px) {
+            .difficulty-options {
+                flex-direction: column;
+            }
+            
+            .game-board {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 8px;
+            }
+            
+            .card {
+                min-width: 0;
+            }
+        }
+        
+        @media (min-width: 768px) {
+            #banner-ad {
+                height: 90px;
+            }
+        }
+        
+        /* Performance optimizations */
+        .will-change {
+            will-change: transform;
+        }
+    </style>
+</head>
+<body>
+    <!-- Optimized Banner Ad Container -->
+    <div class="ad-container" id="banner-ad">
+        <p>Loading ads...</p>
+    </div>
+    
+    <h1>Memory Match</h1>
+    <p class="subtitle">Flip cards to find matching pairs!</p>
+    
+    <div class="menu" id="menu">
+        <h2>Select Difficulty</h2>
+        <div class="difficulty-options">
+            <button class="difficulty-btn active" data-pairs="6">Easy (6 pairs)</button>
+            <button class="difficulty-btn" data-pairs="8">Medium (8 pairs)</button>
+            <button class="difficulty-btn" data-pairs="12">Hard (12 pairs)</button>
+        </div>
+        <button class="start-btn" id="start-btn">Start Game</button>
+        
+        <!-- Reward Ad Option -->
+        <div id="reward-ad-container">
+            <button class="start-btn reward-btn" id="reward-btn">Watch Ad for Bonus Points</button>
+            <p id="reward-status"></p>
+        </div>
+    </div>
+    
+    <div class="game-container" id="game-container">
+        <div class="game-header">
+            <div class="stats">
+                <div class="stat-box">Pairs: <span id="pairs-count">0</span>/<span id="total-pairs">0</span></div>
+                <div class="stat-box">Time: <span id="time">0</span>s</div>
+                <div class="stat-box">Score: <span id="score">0</span></div>
+            </div>
+            <button class="start-btn" id="back-btn">Back to Menu</button>
+        </div>
+        <div class="game-board" id="game-board"></div>
+    </div>
+    
+    <div class="how-to-play">
+        <h2>How to Play</h2>
+        <ul>
+            <li>Flip cards to find matching pairs</li>
+            <li>Match all pairs before time runs out</li>
+            <li>Earn bonus points for quick matches</li>
+            <li>Watch ads for extra rewards</li>
+            <li>Challenge yourself with harder difficulties</li>
+        </ul>
+    </div>
+    
+    <!-- Load the AdMob SDK asynchronously -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3940256099942544" crossorigin="anonymous"></script>
+    
+    <script>
+        // Detect mobile device
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // Game variables
+            let cards = [];
+            let flippedCards = [];
+            let matchedPairs = 0;
+            let totalPairs = 6; // Default to easy
+            let timer = null;
+            let seconds = 0;
+            let score = 0;
+            let gameStarted = false;
+            
+            // AdMob Test Ad Units
+            const AD_UNITS = {
+                BANNER: 'ca-app-pub-3940256099942544/9214589741',
+                INTERSTITIAL: 'ca-app-pub-3940256099942544/1033173712',
+                REWARDED: 'ca-app-pub-3940256099942544/5224354917'
+            };
+            
+            // DOM elements
+            const menu = document.getElementById('menu');
+            const gameContainer = document.getElementById('game-container');
+            const gameBoard = document.getElementById('game-board');
+            const startBtn = document.getElementById('start-btn');
+            const backBtn = document.getElementById('back-btn');
+            const rewardBtn = document.getElementById('reward-btn');
+            const pairsCount = document.getElementById('pairs-count');
+            const totalPairsDisplay = document.getElementById('total-pairs');
+            const timeDisplay = document.getElementById('time');
+            const scoreDisplay = document.getElementById('score');
+            const rewardStatus = document.getElementById('reward-status');
+            const difficultyBtns = document.querySelectorAll('.difficulty-btn');
+            const bannerAdContainer = document.getElementById('banner-ad');
+            
+            // Emoji options for cards (reduced set for better performance)
+            const emojis = ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵', '🐔'];
+            
+            // Initialize game
+            initGame();
+            
+            function initGame() {
+                // Initialize ads after slight delay to ensure SDK is loaded
+                setTimeout(initializeAds, 300);
+                
+                // Event listeners with passive where possible for better scrolling performance
+                startBtn.addEventListener('click', startGame, { passive: true });
+                backBtn.addEventListener('click', returnToMenu, { passive: true });
+                rewardBtn.addEventListener('click', showRewardedAd, { passive: true });
+                
+                difficultyBtns.forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        difficultyBtns.forEach(b => b.classList.remove('active'));
+                        this.classList.add('active');
+                        totalPairs = parseInt(this.dataset.pairs);
+                    }, { passive: true });
+                });
+            }
+            
+            // Ad Functions
+            function initializeAds() {
+                if (typeof google === 'undefined' || typeof google.ads === 'undefined') {
+                    console.error('AdMob SDK not loaded');
+                    bannerAdContainer.innerHTML = '<p>Ad service unavailable</p>';
+                    return;
+                }
+                
+                try {
+                    // Load Banner Ad with mobile-optimized size
+                    const bannerAd = new google.ads.BannerAd({
+                        adUnitPath: AD_UNITS.BANNER,
+                        container: bannerAdContainer,
+                        size: isMobile ? google.ads.Size.BANNER : google.ads.Size.LARGE_BANNER,
+                        onLoad: function() {
+                            console.log('Banner ad loaded successfully');
+                        },
+                        onError: function(error) {
+                            console.error('Banner ad failed to load:', error);
+                            bannerAdContainer.innerHTML = '<p>Ad failed to load</p>';
+                        }
+                    });
+                    bannerAd.load();
+                } catch (e) {
+                    console.error('Ad initialization error:', e);
+                    bannerAdContainer.innerHTML = '<p>Ad service error</p>';
+                }
+            }
+            
+            function showInterstitialAd() {
+                try {
+                    const interstitialAd = new google.ads.InterstitialAd({
+                        adUnitPath: AD_UNITS.INTERSTITIAL
+                    });
+                    
+                    interstitialAd.load({
+                        onLoad: function() {
+                            console.log('Interstitial ad loaded successfully');
+                            interstitialAd.show();
+                        },
+                        onError: function(error) {
+                            console.error('Interstitial ad failed to load:', error);
+                        }
+                    });
+                } catch (e) {
+                    console.error('Interstitial ad error:', e);
+                }
+            }
+            
+            function showRewardedAd() {
+                rewardStatus.textContent = "Loading ad...";
+                rewardBtn.disabled = true;
+                
+                try {
+                    const rewardedAd = new google.ads.RewardedAd({
+                        adUnitPath: AD_UNITS.REWARDED
+                    });
+                    
+                    rewardedAd.load({
+                        onLoad: function() {
+                            console.log('Rewarded ad loaded successfully');
+                            rewardStatus.textContent = "Ad loaded! Watch to earn 50 bonus points!";
+                            
+                            rewardedAd.onEarnedReward = function(reward) {
+                                console.log('User earned reward:', reward);
+                                score += 50;
+                                scoreDisplay.textContent = score;
+                                rewardStatus.textContent = "You earned 50 bonus points!";
+                                rewardBtn.disabled = false;
+                            };
+                            
+                            rewardedAd.onClose = function() {
+                                if (rewardStatus.textContent.includes("Ad loaded")) {
+                                    rewardStatus.textContent = "Ad closed without earning reward";
+                                }
+                                rewardBtn.disabled = false;
+                            };
+                            
+                            rewardedAd.show();
+                        },
+                        onError: function(error) {
+                            console.error('Rewarded ad failed to load:', error);
+                            rewardStatus.textContent = "Ad failed to load. Please try again.";
+                            rewardBtn.disabled = false;
+                        }
+                    });
+                } catch (e) {
+                    console.error('Rewarded ad error:', e);
+                    rewardStatus.textContent = "Ad service error";
+                    rewardBtn.disabled = false;
+                }
+            }
+            
+            // Game functions
+            function startGame() {
+                // Reset game state
+                matchedPairs = 0;
+                seconds = 0;
+                score = 0;
+                flippedCards = [];
+                gameStarted = true;
+                
+                // Update UI
+                menu.style.display = 'none';
+                gameContainer.style.display = 'block';
+                pairsCount.textContent = '0';
+                totalPairsDisplay.textContent = totalPairs;
+                timeDisplay.textContent = '0';
+                scoreDisplay.textContent = '0';
+                rewardStatus.textContent = '';
+                
+                // Create cards
+                createCards();
+                
+                // Start timer
+                if (timer) clearInterval(timer);
+                timer = setInterval(updateTimer, 1000);
+            }
+            
+            function returnToMenu() {
+                // Show interstitial ad when returning to menu
+                if (matchedPairs > 0) {
+                    showInterstitialAd();
+                }
+                
+                // Stop timer
+                clearInterval(timer);
+                timer = null;
+                gameStarted = false;
+                
+                // Reset UI
+                gameContainer.style.display = 'none';
+                menu.style.display = 'block';
+                gameBoard.innerHTML = '';
+            }
+            
+            function createCards() {
+                gameBoard.innerHTML = '';
+                cards = [];
+                
+                // Select emojis based on difficulty
+                const selectedEmojis = emojis.slice(0, totalPairs);
+                const cardValues = [...selectedEmojis, ...selectedEmojis];
+                
+                // Shuffle cards
+                shuffleArray(cardValues);
+                
+                // Determine grid layout based on number of pairs
+                let columns = 4;
+                if (totalPairs === 12) columns = 6;
+                else if (totalPairs === 8) columns = 4;
+                else if (totalPairs === 6) columns = 3;
+                
+                gameBoard.style.gridTemplateColumns = `repeat(${columns}, 1fr)`;
+                
+                // Create card elements with performance optimizations
+                const fragment = document.createDocumentFragment();
+                
+                cardValues.forEach((value, index) => {
+                    const card = document.createElement('div');
+                    card.className = 'card will-change';
+                    card.dataset.index = index;
+                    card.dataset.value = value;
+                    
+                    const cardBack = document.createElement('div');
+                    cardBack.className = 'card-face card-back';
+                    cardBack.textContent = '?';
+                    
+                    const cardFront = document.createElement('div');
+                    cardFront.className = 'card-face card-front';
+                    cardFront.textContent = value;
+                    
+                    card.appendChild(cardBack);
+                    card.appendChild(cardFront);
+                    card.addEventListener('click', flipCard, { passive: true });
+                    
+                    fragment.appendChild(card);
+                    cards.push(card);
+                });
+                
+                gameBoard.appendChild(fragment);
+            }
+            
+            function flipCard() {
+                if (!gameStarted || flippedCards.length >= 2 || this.classList.contains('flipped')) return;
+                
+                this.classList.add('flipped');
+                flippedCards.push(this);
+                
+                if (flippedCards.length === 2) {
+                    checkForMatch();
+                }
+            }
+            
+            function checkForMatch() {
+                const [card1, card2] = flippedCards;
+                const value1 = card1.dataset.value;
+                const value2 = card2.dataset.value;
+                
+                if (value1 === value2) {
+                    // Match found
+                    matchedPairs++;
+                    pairsCount.textContent = matchedPairs;
+                    
+                    // Calculate score (bonus for quick matches)
+                    const timeBonus = Math.max(0, 500 - seconds * 10);
+                    score += 100 + timeBonus;
+                    scoreDisplay.textContent = score;
+                    
+                    // Disable matched cards
+                    card1.removeEventListener('click', flipCard);
+                    card2.removeEventListener('click', flipCard);
+                    
+                    // Check for game completion
+                    if (matchedPairs === totalPairs) {
+                        clearInterval(timer);
+                        setTimeout(() => {
+                            alert(`Congratulations! You won with a score of ${score} in ${seconds} seconds!`);
+                            showInterstitialAd();
+                        }, 500);
+                    }
+                } else {
+                    // No match - flip back after delay
+                    setTimeout(() => {
+                        card1.classList.remove('flipped');
+                        card2.classList.remove('flipped');
+                    }, 1000);
+                }
+                
+                // Reset flipped cards
+                setTimeout(() => {
+                    flippedCards = [];
+                }, 1000);
+            }
+            
+            function updateTimer() {
+                seconds++;
+                timeDisplay.textContent = seconds;
+                
+                // Penalize for taking too long (after 30 seconds)
+                if (seconds > 30 && seconds % 5 === 0) {
+                    score = Math.max(0, score - 10);
+                    scoreDisplay.textContent = score;
+                }
+            }
+            
+            // Optimized shuffle function
+            function shuffleArray(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+                return array;
+            }
+        });
+    </script>
+</body>
+</html>
